@@ -9,3 +9,5 @@ pub mod traits;
 pub mod types;
 pub mod vm;
 pub mod pipeline;
+
+pub use routecore::bgp::workshop::route::RouteWorkshop;
