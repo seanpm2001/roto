@@ -40,7 +40,7 @@ fn test_data(
         0x0d, 0xb8, 0xff, 0xff, 0x00, 0x03, 0x40, 0x01, 0x01, 0x00, 0x40,
         0x02, 0x06, 0x02, 0x01, 0x00, 0x00, 0x00, 0xc8, 0x80, 0x04, 0x04,
         0x00, 0x00, 0x00, 0x00,
-    ]);
+    ]).into();
 
     let update =
         BytesRecord::<BgpUpdateMessage>::new(buf, SessionConfig::modern()).unwrap();
@@ -53,7 +53,7 @@ fn test_data(
         .collect();
 
     let prov = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         // router_id: 0,
         connection_id: std::net::SocketAddr::V4(SocketAddrV4::new("172.0.0.1".parse().unwrap(), 179)),
         peer_id: PeerId { addr: "172.0.0.1".parse().unwrap(), asn: Asn::from(65530)},

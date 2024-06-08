@@ -29,6 +29,8 @@ use crate::{
 };
 
 use arc_swap::ArcSwapOption;
+// use bytes::Bytes;
+use crate::types::builtin::BytesWrapper as Bytes;
 use log::{debug, error, log_enabled, trace, Level};
 use serde::Serialize;
 use smallvec::SmallVec;
@@ -459,7 +461,7 @@ impl LinearMemory {
 
                         let v = LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::RouteMonitoring<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -479,7 +481,7 @@ impl LinearMemory {
 
                         let v = LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::PeerDownNotification<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -499,7 +501,7 @@ impl LinearMemory {
 
                         let v = LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::PeerUpNotification<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -519,7 +521,7 @@ impl LinearMemory {
 
                         let v = LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::InitiationMessage<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -694,7 +696,7 @@ impl LinearMemory {
 
                         LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::RouteMonitoring<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -714,7 +716,7 @@ impl LinearMemory {
 
                         LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::PeerDownNotification<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -734,7 +736,7 @@ impl LinearMemory {
 
                         LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::PeerUpNotification<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?
@@ -754,7 +756,7 @@ impl LinearMemory {
 
                         LazyRecord::from_type_def(BytesRecord::<
                             routecore::bmp::message::InitiationMessage<
-                                bytes::Bytes,
+                                Bytes,
                             >,
                         >::lazy_type_def(
                         ))?

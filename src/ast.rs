@@ -1,5 +1,6 @@
 use std::{borrow, cmp, fmt, hash, ops, str};
 
+use bincode::{BorrowDecode, Decode, Encode};
 use serde::{Serialize, Serializer};
 use smallvec::SmallVec;
 
@@ -1036,6 +1037,27 @@ pub struct PrefixLengthRange {
 }
 
 //------------ ShortString ---------------------------------------------------
+impl Encode for ShortString {
+    
+    fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
+        bincode::Encode::encode(&self.bytes.as_slice(), encoder)?;
+        Ok(())
+    }
+}
+
+impl Decode for ShortString {
+    fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
+        let bytes: [u8; 24] = bincode::Decode::decode(decoder)?;
+        Ok(Self { bytes: SmallVec::<[u8;24]>::from(bytes) })
+    }
+}
+
+impl<'de> BorrowDecode<'de> for ShortString {
+    fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
+        let bytes: [u8; 24] = bincode::BorrowDecode::borrow_decode(decoder)?;
+        Ok(Self { bytes: SmallVec::<[u8;24]>::from(bytes) })
+    }
+}
 
 #[derive(Clone)]
 pub struct ShortString {

@@ -24,7 +24,8 @@ use super::{
 
 //------------ EnumVariant --------------------------------------------------
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, bincode::Decode,
+    bincode::Encode)]
 pub struct EnumVariant<T> where u32: From<T> {
     pub(crate) enum_name: ShortString,
     pub(crate) value: T,

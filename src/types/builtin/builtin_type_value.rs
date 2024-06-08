@@ -2,9 +2,17 @@
 
 // The built-in types
 
+use std::convert::Infallible;
 use std::fmt::Display;
+use std::io::Read;
 use std::net::IpAddr;
 
+use bincode::de::Decoder;
+use bincode::enc::Encoder;
+use bincode::error::{DecodeError, EncodeError};
+use bincode::{impl_borrow_decode, Decode, Encode};
+// use bytes::Bytes;
+use super::BytesWrapper as Bytes;
 use inetnum::asn::Asn;
 use routecore::bgp::types::PathId;
 use routecore::bgp::types::{AtomicAggregate, MultiExitDisc, NextHop, Origin};
@@ -12,6 +20,7 @@ use routecore::bgp::path_attributes::AggregatorInfo;
 use inetnum::addr::Prefix;
 use routecore::bgp::communities::HumanReadableCommunity as Community;
 use routecore::bgp::nlri::afisafi::Nlri;
+use routecore::Octets;
 use serde::Serialize;
 
 use crate::compiler::compile::CompileError;
@@ -24,13 +33,79 @@ use crate::types::lazyrecord_types::{
 
 use super::super::typedef::TypeDef;
 use super::super::typevalue::TypeValue;
+use std::ops::Deref;
 
 use super::basic_route::{PeerId, PeerRibType, Provenance};
 use super::{
     FlowSpecRoute, HexLiteral, IntegerLiteral, NlriStatus, PrefixLength, PrefixRoute, RouteContext, StringLiteral
 };
 
-#[derive(Debug, Eq, Clone, Hash, PartialEq, Serialize)]
+
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
+pub struct BytesWrapper(bytes::Bytes);
+
+impl BytesWrapper {
+    pub fn copy_from_slice(data: &[u8]) -> Self {
+        Self(bytes::Bytes::copy_from_slice(data))
+    }
+}
+
+impl Encode for BytesWrapper {
+    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
+        bincode::Encode::encode(self.0.deref(), encoder)?;
+        Ok(())
+    }
+}
+
+impl Decode for BytesWrapper {
+    fn decode<D: Decoder>(decoder: &mut D) -> Result<Self, DecodeError> {
+        let s: Vec<u8> = bincode::Decode::decode(decoder)?;
+        Ok(Self(s.into()))
+    }
+}
+
+impl_borrow_decode!(BytesWrapper);
+
+impl AsRef<[u8]> for BytesWrapper {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+impl Octets for BytesWrapper {
+    type Range<'a> = BytesWrapper;
+
+    fn range(&self, range: impl std::ops::RangeBounds<usize>) -> Self::Range<'_> {
+        BytesWrapper(self.0.range(range))
+    }
+}
+
+// impl From<bytes::Bytes> for BytesWrapper {
+//     fn from(value: bytes::Bytes) -> Self {
+//         Self(value)
+//     }
+// }
+
+// impl<T: From<bytes::Bytes>> Into<T> for BytesWrapper {
+//     fn into(self) -> T {
+//         self.0.into()
+//     }
+// }
+
+impl<T> From<T> for BytesWrapper where bytes::Bytes: std::convert::From<T> {
+    fn from(value: T) -> Self {
+        Self(bytes::Bytes::from(value))
+    }
+}
+
+impl From<BytesWrapper> for Vec<u8> {
+    fn from(value: BytesWrapper) -> Self {
+        Vec::<u8>::from(value.0)
+    }
+}
+
+
+#[derive(Debug, Eq, Clone, Hash, PartialEq, Serialize, Encode, Decode)]
 #[serde(untagged)]
 pub enum BuiltinTypeValue {
     U32(u32),                         // scalar
@@ -52,14 +127,14 @@ pub enum BuiltinTypeValue {
     MultiExitDisc(MultiExitDisc),     // scalar
     NlriStatus(NlriStatus),         // scalar
     Community(Community),             // scalar
-    Nlri(Nlri<bytes::Bytes>),                       // scalar
+    Nlri(Nlri<Bytes>),                       // scalar
     Provenance(Provenance),           // scalar
     Asn(Asn),                         // scalar
     AsPath(routecore::bgp::aspath::HopPath),        // vector
     Hop(routecore::bgp::aspath::OwnedHop), // read-only scalar
     Origin(Origin),           // scalar
     PrefixRoute(PrefixRoute),
-    FlowSpecRoute(FlowSpecRoute<bytes::Bytes>),
+    FlowSpecRoute(FlowSpecRoute<Bytes>),
     RouteContext(RouteContext),
     PeerId(PeerId),                    // scalar
     PeerRibType(PeerRibType), // scalar
@@ -82,7 +157,7 @@ pub enum BuiltinTypeValue {
 impl BuiltinTypeValue {
     pub fn into_type(
         self,
-        ty: &TypeDef,
+        ty: &TypeDef,   
     ) -> Result<TypeValue, CompileError> {
         match self {
             BuiltinTypeValue::U32(v) => v.into_type(ty),

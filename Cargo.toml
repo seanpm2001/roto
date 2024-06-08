@@ -22,11 +22,15 @@ nom             = "7.1"
 paste           = "1.0.14"
 smallvec        = { version = "1.11", features = [ "const_generics", "serde" ] }
 serde           = { version = "1.0", features = [ "derive", "rc" ] }
-inetnum         = { version = "0.1.0", features = ["arbitrary", "serde"] }
-rotonda-store   = { git = "https://github.com/nlnetlabs/rotonda-store", branch = "indexed-multi-map" }
-routecore       = { git = "https://github.com/nlnetlabs/routecore", branch = "absorb-fsm", features = ["bgp", "bmp", "serde"] }
+# inetnum         = { version = "0.1.0", features = ["arbitrary", "serde"] }
+inetnum         = { path = "../../inetnum", features = ["arbitrary", "serde", "bincode"] }
+# rotonda-store   = { git = "https://github.com/nlnetlabs/rotonda-store", branch = "indexed-multi-map" }
+rotonda-store   = { path = "../rotonda-store" }
+# routecore       = { git = "https://github.com/nlnetlabs/routecore", branch = "absorb-fsm", features = ["bgp", "bmp", "serde"] }
+routecore       = { path = "../../routecore", features = ["bgp", "bmp", "serde", "bincode"] }
 clap            = { version = "4.4.6", features = ["derive"] }
 ariadne         = "0.4.0"
+bincode         = "2.0.0-rc.3"
 
 [dev-dependencies]
 env_logger  = "0.10"

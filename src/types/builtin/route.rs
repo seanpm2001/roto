@@ -1,6 +1,9 @@
 use std::collections::BTreeSet;
 
+use bincode::impl_borrow_decode;
+// use bytes::Bytes;
 use inetnum::addr::Prefix;
+use routecore::bgp::nlri::afisafi::AfiSafiNlri;
 use routecore::bgp::nlri::afisafi::AfiSafiType;
 use routecore::bgp::nlri::afisafi::IsPrefix;
 use routecore::bgp::nlri::afisafi::NlriType;
@@ -24,9 +27,11 @@ use serde::Serialize;
 
 use crate::types::typevalue::TypeValue;
 
+use super::BytesWrapper as Bytes;
 use super::Nlri;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, bincode::Decode, 
+    bincode::Encode)]
 pub enum PrefixRouteWs {
     Ipv4Unicast(RouteWorkshop<Ipv4UnicastNlri>),
     Ipv4UnicastAddpath(RouteWorkshop<Ipv4UnicastAddpathNlri>),
@@ -139,10 +144,12 @@ impl From<&Ipv6MulticastAddpathNlri> for PrefixNlri {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, bincode::Decode, 
+    bincode::Encode)]
 pub struct PrefixRoute(pub PrefixRouteWs);
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, bincode::Decode, 
+    bincode::Encode)]
 pub enum FlowSpecNlri<O: AsRef<[u8]>> {
     Ipv4FlowSpec(Ipv4FlowSpecNlri<O>),
     Ipv6FlowSpec(Ipv6FlowSpecNlri<O>),
@@ -152,6 +159,32 @@ pub enum FlowSpecNlri<O: AsRef<[u8]>> {
 pub struct FlowSpecRoute<O: AsRef<[u8]>> {
     pub(crate) nlri: FlowSpecNlri<O>,
     pub(crate) attributes: PaMap,
+}
+
+impl<O: AsRef<[u8]> + bincode::Encode> bincode::Encode for FlowSpecRoute<O> {
+    fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
+        bincode::Encode::encode(&self.nlri, encoder)?;
+        bincode::Encode::encode(&self.attributes, encoder)?;
+        Ok(())
+    }
+}
+
+impl<O: AsRef<[u8]> + bincode::Decode> bincode::Decode for FlowSpecRoute<O> {
+    fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> { 
+        Ok(Self {
+            nlri: bincode::Decode::decode(decoder)?,
+            attributes: bincode::Decode::decode(decoder)?
+        })
+    }
+}
+
+impl<'de, O: AsRef<[u8]> + bincode::BorrowDecode<'de>> bincode::BorrowDecode<'de> for FlowSpecRoute<O> {
+    fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
+        Ok(Self {
+            nlri: bincode::BorrowDecode::borrow_decode(decoder)?,
+            attributes: bincode::BorrowDecode::borrow_decode(decoder)?
+        })
+    }
 }
 
 impl From<RouteWorkshop<Ipv4UnicastNlri>> for PrefixRoute {
@@ -222,7 +255,7 @@ macro_rules! announcements_into_typevalues {
 /// matter what the type of the `NLRI` of the announcement is.
 #[allow(clippy::mutable_key_type)]
 pub fn explode_announcements(
-    update: &UpdateMessage<bytes::Bytes>,
+    update: &UpdateMessage<Bytes>,
     nlri_set: &mut BTreeSet<Nlri>,
 ) -> Result<Vec<TypeValue>, ParseError> {
     // Read all the types of NLRI in MP_REACH and/or conventional NLRI.
@@ -298,7 +331,7 @@ pub fn explode_announcements(
             NlriType::Ipv4RouteTargetAddpath => todo!(),
             NlriType::Ipv4FlowSpec => {
                 announcements_into_typevalues!(
-                    Ipv4FlowSpecNlri<bytes::Bytes>,
+                    Ipv4FlowSpecNlri<Bytes>,
                     update,
                     tv_vec,
                     nlri_set
@@ -307,7 +340,7 @@ pub fn explode_announcements(
             NlriType::Ipv4FlowSpecAddpath => todo!(),
             NlriType::Ipv6FlowSpec => {
                 announcements_into_typevalues!(
-                    Ipv6FlowSpecNlri<bytes::Bytes>,
+                    Ipv6FlowSpecNlri<Bytes>,
                     update,
                     tv_vec,
                     nlri_set
@@ -356,7 +389,7 @@ macro_rules! withdrawals_into_typevalues {
 /// matter what the type of the `NLRI` of the announcement is.
 #[allow(clippy::mutable_key_type)]
 pub fn explode_withdrawals(
-    update: &UpdateMessage<bytes::Bytes>,
+    update: &UpdateMessage<Bytes>,
     nlri_set: &mut BTreeSet<Nlri>
 ) -> Result<Vec<TypeValue>, ParseError> {
     // Read all the types of NLRI in MP_REACH and/or conventional NLRI.
@@ -426,7 +459,7 @@ pub fn explode_withdrawals(
             NlriType::Ipv4RouteTargetAddpath => todo!(),
             NlriType::Ipv4FlowSpec => {
                 withdrawals_into_typevalues!(
-                    Ipv4FlowSpecNlri<bytes::Bytes>,
+                    Ipv4FlowSpecNlri<Bytes>,
                     update,
                     res,
                     nlri_set
@@ -435,7 +468,7 @@ pub fn explode_withdrawals(
             NlriType::Ipv4FlowSpecAddpath => todo!(),
             NlriType::Ipv6FlowSpec => {
                 withdrawals_into_typevalues!(
-                    Ipv6FlowSpecNlri<bytes::Bytes>,
+                    Ipv6FlowSpecNlri<Bytes>,
                     update,
                     res,
                     nlri_set
@@ -486,7 +519,7 @@ pub fn explode_withdrawals(
             0x80, 0x04, 0x04, 0x00, 0x00, 0x00, 0x00,
             16, 1, 2,
             16, 10, 20
-        ]);
+        ]).into();
         let pdu = UpdateMessage::from_octets(raw, &SessionConfig::modern())
             .unwrap();
 

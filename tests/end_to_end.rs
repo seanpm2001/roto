@@ -1,3 +1,5 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use log::trace;
 
 use roto::ast::AcceptReject;
@@ -9,6 +11,7 @@ use roto::types::datasources::{DataSource, Rib};
 use roto::types::typedef::TypeDef;
 use roto::types::typevalue::TypeValue;
 use roto::vm::{self, VmResult};
+use rotonda_store::Meta;
 // use rotonda_store::prelude::MergeUpdate;
 use routecore::bgp::communities::HumanReadableCommunity as Community;
 use inetnum::asn::Asn;
@@ -17,6 +20,17 @@ mod common;
 
 #[derive(Debug, Clone)]
 struct RibValue(Vec<TypeValue>);
+
+impl Meta for RibValue {
+    type Orderable<'a> = u64;
+    type TBI = ();
+
+    fn as_orderable(&self, _tbi: Self::TBI) -> Self::Orderable<'_> {
+        let mut hasher = DefaultHasher::new();
+        self.0.hash(&mut hasher);
+        hasher.finish()
+    }
+}
 
 // impl MergeUpdate for RibValue {
 //     type UserDataIn = ();
@@ -145,7 +159,7 @@ fn test_data(
     let peer_ip = "192.0.2.0".parse().unwrap();
 
     let provenance = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "192.0.2.0:178".parse().unwrap(),
         peer_id: PeerId { addr: peer_ip, asn: Asn::from(65534) },
         peer_bgp_id: [0; 4].into(),

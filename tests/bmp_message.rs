@@ -8,7 +8,7 @@ use roto::{
     types::{
         builtin::{
             BuiltinTypeValue, BytesRecord, NlriStatus, PeerId, PeerRibType,
-            Provenance, RouteContext,
+            Provenance, RouteContext, BytesWrapper as Bytes
         },
         collections::Record,
         lazyrecord_types::{
@@ -64,7 +64,7 @@ fn test_data(
     let peer_ip = "192.0.2.0".parse().unwrap();
 
     let provenance = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "192.0.2.0:178".parse().unwrap(),
         peer_id: PeerId {
             addr: peer_ip,
@@ -149,7 +149,7 @@ fn test_data_2(
     let peer_ip = "192.0.2.0".parse().unwrap();
 
     let provenance = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "192.0.2.10:178".parse().unwrap(),
         peer_id: PeerId {
             addr: peer_ip,
@@ -232,7 +232,7 @@ fn test_data_3(
     let peer_ip = "192.0.2.0".parse().unwrap();
 
     let provenance = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "192.0.2.10:178".parse().unwrap(),
         peer_id: PeerId {
             addr: peer_ip,
@@ -297,7 +297,7 @@ fn test_data_4(
         let peer_ip = "192.0.2.0".parse().unwrap();
 
         let provenance = Provenance {
-            timestamp: chrono::Utc::now(),
+            timestamp: chrono::Utc::now().into(),
             connection_id: "192.0.2.10:178".parse().unwrap(),
             peer_id: PeerId {
                 addr: peer_ip,
@@ -350,7 +350,7 @@ fn initiation_payload_example() -> Vec<u8> {
 fn compile_initiation_payload(
     name: Scope,
     source_code: &'static str,
-    buf: routecore::bmp::message::Message<bytes::Bytes>,
+    buf: routecore::bmp::message::Message<Bytes>,
 ) -> Result<VmResult, Box<dyn std::error::Error>> {
     println!("Evaluate filter-map {}...", name);
 
@@ -379,7 +379,7 @@ fn compile_initiation_payload(
     let peer_ip = "192.0.2.0".parse().unwrap();
 
     let provenance = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "192.0.2.10:178".parse().unwrap(),
         peer_id: PeerId {
             addr: peer_ip,
@@ -441,7 +441,7 @@ fn initiation_msg_test_1() {
     let payl = initiation_payload_example();
 
     let i_msg = routecore::bmp::message::Message::from_octets(
-        bytes::Bytes::from(payl),
+        bytes::Bytes::from(payl).into(),
     )
     .unwrap();
 
@@ -493,7 +493,7 @@ fn initiation_msg_test_2() {
     let payl = initiation_payload_example();
 
     let i_msg = routecore::bmp::message::Message::from_octets(
-        bytes::Bytes::from(payl),
+        bytes::Bytes::from(payl).into(),
     )
     .unwrap();
 
@@ -546,7 +546,7 @@ fn initiation_msg_test_3() {
     let payl = initiation_payload_example();
 
     let i_msg = routecore::bmp::message::Message::from_octets(
-        bytes::Bytes::from(payl),
+        bytes::Bytes::from(payl).into(),
     )
     .unwrap();
 
@@ -596,7 +596,7 @@ fn bmp_route_monitoring_1() {
     let payl = route_monitoring_example();
 
     let pd_msg = routecore::bmp::message::Message::from_octets(
-        bytes::Bytes::from(payl),
+        bytes::Bytes::from(payl).into(),
     )
     .unwrap();
 
@@ -1002,7 +1002,7 @@ fn mk_initiation_msg() -> bytes::Bytes {
 fn bmp_message_9() {
     common::init();
 
-    let buf = mk_initiation_msg();
+    let buf = mk_initiation_msg().into();
     let rm_msg = BytesRecord::<InitiationMessage>::new(buf);
     assert!(rm_msg.is_ok());
     let rm_msg = rm_msg.unwrap();
@@ -1108,7 +1108,7 @@ fn bmp_message_10() {
 fn initiation_message() {
     common::init();
 
-    let buf = mk_initiation_msg();
+    let buf = mk_initiation_msg().into();
     let im_msg = BytesRecord::<BmpMessage>::new(buf);
     assert!(im_msg.is_ok());
     let im_msg = im_msg.unwrap();
@@ -1156,7 +1156,7 @@ fn initiation_message() {
 fn peer_down_notification_1() {
     let pph = mk_per_peer_header("192.0.2.10", 65536);
     let peer_up: BytesRecord<BmpMessage> =
-        BytesRecord::<BmpMessage>::new(mk_peer_down_notification_msg(&pph).0)
+        BytesRecord::<BmpMessage>::new(mk_peer_down_notification_msg(&pph).0.into())
             .unwrap();
     let payload: TypeValue = TypeValue::Builtin(peer_up.into());
     println!("payload {:?}", payload);
@@ -1201,7 +1201,7 @@ fn peer_down_notification_1() {
 fn peer_down_notification_2() {
     let pph = mk_per_peer_header("192.0.2.10", 65536);
     let peer_up: BytesRecord<BmpMessage> =
-        BytesRecord::<BmpMessage>::new(mk_peer_down_notification_msg(&pph).0)
+        BytesRecord::<BmpMessage>::new(mk_peer_down_notification_msg(&pph).0.into())
             .unwrap();
     let payload: TypeValue = TypeValue::Builtin(peer_up.into());
     println!("payload {:?}", payload);
@@ -1245,7 +1245,7 @@ fn peer_down_notification_2() {
 #[test]
 fn termination_message_1() {
     let peer_up: BytesRecord<BmpMessage> =
-        BytesRecord::<BmpMessage>::new(mk_termination_msg()).unwrap();
+        BytesRecord::<BmpMessage>::new(mk_termination_msg().into()).unwrap();
     let btv: BuiltinTypeValue = peer_up.into();
     let expected: Result<TypeValue, CompileError> = Err(CompileError::from(
         "Cannot convert raw BMP message into any other type.",

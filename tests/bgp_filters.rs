@@ -38,11 +38,11 @@ fn test_data(
     let msg_buf =
         mk_bgp_update(&per_peer_header, &withdrawals, &announcements, &[]);
 
-    let bgp_msg = BytesRecord::<BgpUpdateMessage>::new(msg_buf.0, SessionConfig::modern())?;
+    let bgp_msg = BytesRecord::<BgpUpdateMessage>::new(msg_buf.0.into(), SessionConfig::modern())?;
     // let afi_safis = bgp_msg.bytes_parser().afi_safis().into_iter().flatten();
 
     let prov = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "127.0.0.1:8080".parse().unwrap(),
         peer_id: PeerId { addr: "172.0.0.1".parse().unwrap(), asn: Asn::from(65530)},
         peer_bgp_id: [0,0,0,0].into(),

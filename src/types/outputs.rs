@@ -1,3 +1,4 @@
+use bincode::Encode;
 use log::trace;
 use serde::Serialize;
 
@@ -103,7 +104,7 @@ impl From<OutputStreamToken> for usize {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, bincode::Decode, Encode)]
 pub struct OutputStreamMessage {
     name: ShortString,
     topic: String,

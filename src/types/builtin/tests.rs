@@ -8,7 +8,7 @@ mod route {
     use crate::types::builtin::basic_route::{
         PeerId, PeerRibType, Provenance,
     };
-    use crate::types::builtin::{explode_announcements, BuiltinTypeValue, BytesRecord, Nlri};
+    use crate::types::builtin::{explode_announcements, BuiltinTypeValue, BytesRecord, Nlri, BytesWrapper as Bytes};
     use crate::types::lazyrecord_types::BgpUpdateMessage;
     use crate::types::typedef::TypeDef;
     use crate::types::typevalue::TypeValue;
@@ -76,7 +76,7 @@ mod route {
 
         let update: BytesRecord<BgpUpdateMessage> =
             BytesRecord::<BgpUpdateMessage>::new(
-                buf,
+                Bytes::from(buf),
                 SessionConfig::modern(),
             )
             .unwrap();
@@ -99,7 +99,7 @@ mod route {
         let mut roto_msgs = vec![];
 
         let _provenance = Provenance {
-            timestamp: chrono::Utc::now(),
+            timestamp: chrono::Utc::now().into(),
             // router_id: 0,
             connection_id: "127.0.0.1:178".parse().unwrap(),
             peer_id: PeerId {
@@ -227,7 +227,7 @@ mod route {
         ]);
 
         let update = BytesRecord::<BgpUpdateMessage>::new(
-            buf,
+            Bytes::from(buf),
             SessionConfig::modern(),
         )
         .unwrap();

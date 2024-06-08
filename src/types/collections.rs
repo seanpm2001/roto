@@ -58,7 +58,8 @@ use super::typevalue::TypeValue;
 /// This enum is used to differentiate between recursive collections and
 /// simple collections (that only contain primitive types). The latter do not
 /// need to be boxed, while the former do.
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, bincode::Decode,
+    bincode::Encode)]
 #[serde(untagged)]
 pub enum ElementTypeValue {
     Primitive(TypeValue),
@@ -263,7 +264,8 @@ impl From<&ElementTypeValue> for ShortString {
 
 /// A recursive, materialized list that can contain any [`TypeValue`] variant,
 /// including Records and Lists.
-#[derive(Debug, Eq, Clone, Hash, PartialEq, Serialize)]
+#[derive(Debug, Eq, Clone, Hash, PartialEq, Serialize, bincode::Decode, 
+    bincode::Encode)]
 pub struct List(pub(crate) Vec<ElementTypeValue>);
 
 impl List {
@@ -709,7 +711,8 @@ impl From<ListToken> for usize {
 
 /// A recursive, materialized Record type that can contain any [`TypeValue`]
 /// variant, including Lists and Records.
-#[derive(Debug, PartialEq, Eq, Default, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Default, Clone, Hash, bincode::Decode, 
+    bincode::Encode)]
 pub struct Record(Vec<(ShortString, ElementTypeValue)>);
 
 impl<'a> Record {
@@ -1225,7 +1228,7 @@ pub trait RecordType: AsRef<[u8]> {
 /// A wrapper around routecore types, used to store into a [`TypeValue`]. The
 /// actual mapping between routecore methods and Roto record field names and
 /// values does not happen here, but in the [`LazyRecord`]` type.
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, bincode::Decode, bincode::Encode)]
 pub struct BytesRecord<T: RecordType>(T);
 
 impl<T: RecordType + std::fmt::Debug> BytesRecord<T> {

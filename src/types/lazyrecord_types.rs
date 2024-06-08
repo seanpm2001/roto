@@ -2,7 +2,7 @@ use log::trace;
 use serde::Serialize;
 
 use super::{
-    builtin::{BuiltinTypeValue, PrefixRoute},
+    builtin::{BuiltinTypeValue, BytesWrapper as Bytes, PrefixRoute},
     collections::RecordType,
     typedef::{MethodProps, RecordTypeDef, TypeDef},
     typevalue::TypeValue,
@@ -15,20 +15,20 @@ use crate::{
 };
 
 pub type BgpUpdateMessage =
-    routecore::bgp::message::UpdateMessage<bytes::Bytes>;
-pub type BmpMessage = routecore::bmp::message::Message<bytes::Bytes>;
+    routecore::bgp::message::UpdateMessage<Bytes>;
+pub type BmpMessage = routecore::bmp::message::Message<Bytes>;
 pub type InitiationMessage =
-    routecore::bmp::message::InitiationMessage<bytes::Bytes>;
+    routecore::bmp::message::InitiationMessage<Bytes>;
 pub type StatisticsReport =
-    routecore::bmp::message::StatisticsReport<bytes::Bytes>;
+    routecore::bmp::message::StatisticsReport<Bytes>;
 pub type RouteMonitoring =
-    routecore::bmp::message::RouteMonitoring<bytes::Bytes>;
+    routecore::bmp::message::RouteMonitoring<Bytes>;
 pub type PeerUpNotification =
-    routecore::bmp::message::PeerUpNotification<bytes::Bytes>;
+    routecore::bmp::message::PeerUpNotification<Bytes>;
 pub type PeerDownNotification =
-    routecore::bmp::message::PeerDownNotification<bytes::Bytes>;
+    routecore::bmp::message::PeerDownNotification<Bytes>;
 pub type TerminationMessage =
-    routecore::bmp::message::TerminationMessage<bytes::Bytes>;
+    routecore::bmp::message::TerminationMessage<Bytes>;
 
 impl RecordType for BmpMessage {
     fn get_field_num() -> usize {

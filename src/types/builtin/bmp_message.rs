@@ -24,6 +24,8 @@ use crate::{
 
 pub use crate::types::collections::BytesRecord;
 
+use super::BytesWrapper as Bytes;
+
 //------------ BmpMessage ---------------------------------------------------
 
 createtoken!(
@@ -38,9 +40,9 @@ createtoken!(
 );
 
 impl BytesRecord<BmpMessage> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         Ok(
-            routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
+            routecore::bmp::message::Message::<Bytes>::from_octets(
                 bytes,
             )
             .map_err(|_| VmError::InvalidMsgType)?.into()
@@ -126,7 +128,7 @@ impl EnumBytesRecord for BytesRecord<BmpMessage> {
                 );
                 let rm =
                     routecore::bmp::message::RouteMonitoring::from_octets(
-                        bytes::Bytes::copy_from_slice(raw_bytes),
+                        Bytes::copy_from_slice(raw_bytes).into(),
                     ).map_err(|_| VmError::InvalidPayload)?;
                 LazyRecord::<RouteMonitoring>::new(BytesRecord::<
                     RouteMonitoring,
@@ -141,7 +143,7 @@ impl EnumBytesRecord for BytesRecord<BmpMessage> {
             LazyRecordTypeDef::PeerDownNotification => {
                 let pd =
                     routecore::bmp::message::PeerDownNotification::from_octets(
-                        bytes::Bytes::copy_from_slice(raw_bytes),
+                        Bytes::copy_from_slice(raw_bytes).into(),
                     )
                     .map_err(|_| VmError::InvalidPayload)?;
                 LazyRecord::<PeerDownNotification>::new(BytesRecord::<
@@ -157,7 +159,7 @@ impl EnumBytesRecord for BytesRecord<BmpMessage> {
             LazyRecordTypeDef::PeerUpNotification => {
                 let pu =
                     routecore::bmp::message::PeerUpNotification::from_octets(
-                        bytes::Bytes::copy_from_slice(raw_bytes),
+                        Bytes::copy_from_slice(raw_bytes).into(),
                     )
                     .map_err(|_| VmError::InvalidPayload)?;
                 LazyRecord::<PeerUpNotification>::new(BytesRecord::<
@@ -173,7 +175,7 @@ impl EnumBytesRecord for BytesRecord<BmpMessage> {
             LazyRecordTypeDef::InitiationMessage => {
                 let pu =
                     routecore::bmp::message::InitiationMessage::from_octets(
-                        bytes::Bytes::copy_from_slice(raw_bytes),
+                        Bytes::copy_from_slice(raw_bytes).into(),
                     )
                     .map_err(|_| VmError::InvalidPayload)?;
                 LazyRecord::<InitiationMessage>::new(BytesRecord::<
@@ -189,7 +191,7 @@ impl EnumBytesRecord for BytesRecord<BmpMessage> {
             LazyRecordTypeDef::StatisticsReport => {
                 let pu =
                     routecore::bmp::message::StatisticsReport::from_octets(
-                        bytes::Bytes::copy_from_slice(raw_bytes),
+                        Bytes::copy_from_slice(raw_bytes).into(),
                     )
                     .map_err(|_| VmError::InvalidPayload)?;
                 LazyRecord::<StatisticsReport>::new(BytesRecord::<
@@ -295,10 +297,10 @@ bytes_record_impl!(
 );
 
 impl BytesRecord<RouteMonitoring> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         if let routecore::bmp::message::Message::RouteMonitoring(rm_msg) =
-            routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
-                bytes,
+            routecore::bmp::message::Message::<Bytes>::from_octets(
+                bytes.into(),
             )
             .map_err(|_| VmError::InvalidPayload)?
         {
@@ -380,10 +382,10 @@ bytes_record_impl!(
 );
 
 impl BytesRecord<PeerUpNotification> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         if let routecore::bmp::message::Message::PeerUpNotification(pu_msg) =
-            routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
-                bytes,
+            routecore::bmp::message::Message::<Bytes>::from_octets(
+                bytes.into(),
             )
             .map_err(|_| VmError::InvalidPayload)?
         {
@@ -439,11 +441,11 @@ bytes_record_impl!(
 );
 
 impl BytesRecord<PeerDownNotification> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         if let routecore::bmp::message::Message::PeerDownNotification(
             pd_msg,
-        ) = routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
-            bytes,
+        ) = routecore::bmp::message::Message::<Bytes>::from_octets(
+            bytes.into(),
         )
         .map_err(|_| VmError::InvalidPayload)?
         {
@@ -469,11 +471,11 @@ bytes_record_impl!(
 );
 
 impl BytesRecord<InitiationMessage> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         if let routecore::bmp::message::Message::InitiationMessage(
             pd_msg,
-        ) = routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
-            bytes,
+        ) = routecore::bmp::message::Message::<Bytes>::from_octets(
+            bytes.into(),
         )
         .map_err(|_| VmError::InvalidPayload)?
         {
@@ -500,11 +502,11 @@ bytes_record_impl!(
 );
 
 impl BytesRecord<TerminationMessage> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         if let routecore::bmp::message::Message::TerminationMessage(
             pd_msg,
-        ) = routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
-            bytes,
+        ) = routecore::bmp::message::Message::<Bytes>::from_octets(
+            bytes.into(),
         )
         .map_err(|_| VmError::InvalidPayload)?
         {
@@ -560,10 +562,10 @@ bytes_record_impl!(
 );
 
 impl BytesRecord<StatisticsReport> {
-    pub fn new(bytes: bytes::Bytes) -> Result<Self, VmError> {
+    pub fn new(bytes: Bytes) -> Result<Self, VmError> {
         if let routecore::bmp::message::Message::StatisticsReport(sr_msg) =
-            routecore::bmp::message::Message::<bytes::Bytes>::from_octets(
-                bytes,
+            routecore::bmp::message::Message::<Bytes>::from_octets(
+                bytes.into(),
             )
             .map_err(|_| VmError::InvalidPayload)?
         {

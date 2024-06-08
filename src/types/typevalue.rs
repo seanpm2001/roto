@@ -1,6 +1,8 @@
 use std::net::IpAddr;
 use std::{cmp::Ordering, fmt::Display, sync::Arc};
 
+use bincode::{Decode, Encode};
+// use bytes::Bytes;
 use log::{debug, trace};
 use primitives::{Nlri, NlriStatus};
 
@@ -33,7 +35,7 @@ use crate::{
 };
 
 use super::builtin::basic_route::{PeerId, PeerRibType, Provenance};
-use super::builtin::{FlowSpecNlri, FlowSpecRoute, PrefixRoute, PrefixRouteWs, RouteContext};
+use super::builtin::{BytesWrapper as Bytes, FlowSpecNlri, FlowSpecRoute, PrefixRoute, PrefixRouteWs, RouteContext};
 use super::lazyrecord_types::BgpUpdateMessage;
 use super::{
     builtin::{
@@ -55,7 +57,7 @@ use super::{
 /// These are the actual types that are used in the Roto language. This enum
 /// holds both the type-level information and the value. The collection
 /// variants can hold multiple values recursively, e.g. a List of Records.
-#[derive(Debug, Eq, Default, Clone, Serialize)]
+#[derive(Debug, Eq, Default, Clone, Serialize, Encode, Decode)]
 #[serde(untagged)]
 pub enum TypeValue {
     /// All the built-in scalars and vectors
@@ -305,7 +307,7 @@ impl TypeValue {
         }
     }
 
-    pub fn into_flowspec_route(self) -> Result<FlowSpecRoute<bytes::Bytes>, Self> {
+    pub fn into_flowspec_route(self) -> Result<FlowSpecRoute<Bytes>, Self> {
         if let TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(route)) = self {
             Ok(route)
         } else {
@@ -338,7 +340,7 @@ impl TypeValue {
 
 pub enum BytesRecordType {
     InitiationMessage(
-        routecore::bmp::message::InitiationMessage<bytes::Bytes>,
+        routecore::bmp::message::InitiationMessage<Bytes>,
     ),
 }
 
@@ -1539,8 +1541,8 @@ impl From<RouteWorkshop<Ipv6MulticastAddpathNlri>> for TypeValue {
     }
 }
 
-impl From<RouteWorkshop<Ipv6FlowSpecNlri<bytes::Bytes>>> for TypeValue {
-    fn from(value: RouteWorkshop<Ipv6FlowSpecNlri<bytes::Bytes>>) -> Self {
+impl From<RouteWorkshop<Ipv6FlowSpecNlri<Bytes>>> for TypeValue {
+    fn from(value: RouteWorkshop<Ipv6FlowSpecNlri<Bytes>>) -> Self {
         TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(FlowSpecRoute {
             nlri: FlowSpecNlri::Ipv6FlowSpec(value.nlri().clone()),
             attributes: value.attributes().clone(),

@@ -9,7 +9,7 @@ use roto::pipeline;
 use roto::types::builtin::basic_route::{
     BasicRouteToken, PeerId, PeerRibType, Provenance,
 };
-use roto::types::builtin::{explode_announcements, BuiltinTypeValue, NlriStatus, RouteContext};
+use roto::types::builtin::{explode_announcements, BuiltinTypeValue, NlriStatus, RouteContext, BytesWrapper as Bytes};
 use roto::types::collections::{BytesRecord, Record};
 use roto::types::lazyrecord_types::BgpUpdateMessage;
 use roto::types::typevalue::TypeValue;
@@ -36,7 +36,7 @@ fn test_data(
 
     // BGP UPDATE message containing MP_REACH_NLRI path attribute,
     // comprising 5 IPv6 NLRIs
-    let buf = bytes::Bytes::from(vec![
+    let buf = Bytes::from(vec![
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x88, 0x02, 0x00, 0x00, 0x00,
         0x71, 0x80, 0x0e, 0x5a, 0x00, 0x02, 0x01, 0x20, 0xfc, 0x00, 0x00,
@@ -76,7 +76,7 @@ fn test_data(
     let peer_ip = "fe80::1".parse().unwrap();
 
     let provenance = Provenance {
-        timestamp: chrono::Utc::now(),
+        timestamp: chrono::Utc::now().into(),
         connection_id: "[fe80::1]:178".parse().unwrap(),
         peer_id: PeerId {
             addr: peer_ip,

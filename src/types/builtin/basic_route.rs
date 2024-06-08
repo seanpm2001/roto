@@ -3,6 +3,10 @@ use std::hash::Hasher;
 use std::net::IpAddr;
 use std::net::SocketAddr;
 
+use bincode::impl_borrow_decode;
+// use bytes::Bytes;
+use super::BytesWrapper as Bytes;
+use chrono::DateTime;
 use chrono::Utc;
 use routecore::bgp::communities::Community;
 use routecore::bgp::communities::HumanReadableCommunity;
@@ -17,6 +21,7 @@ use routecore::bgp::nlri::afisafi::Ipv4MulticastAddpathNlri;
 use routecore::bgp::nlri::afisafi::Ipv6MulticastNlri;
 use routecore::bgp::nlri::afisafi::Ipv6MulticastAddpathNlri;
 use routecore::bgp::workshop::route::WorkshopAttribute;
+use serde::Serializer;
 use crate::types::builtin::FlowSpecNlri::Ipv4FlowSpec;
 use routecore::bgp::nlri::afisafi::IsPrefix;
 use routecore::bgp::path_attributes::PaMap;
@@ -325,8 +330,8 @@ impl From<PrefixRoute> for TypeValue {
     }
 }
 
-impl From<FlowSpecRoute<bytes::Bytes>> for TypeValue {
-    fn from(value: FlowSpecRoute<bytes::Bytes>) -> Self {
+impl From<FlowSpecRoute<Bytes>> for TypeValue {
+    fn from(value: FlowSpecRoute<Bytes>) -> Self {
         TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(value))
     }
 }
@@ -400,7 +405,8 @@ impl From<PathAttribute> for TypeValue {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, bincode::Decode, 
+    bincode::Encode)]
 pub struct RouteContext {
     pub(crate) bgp_msg: Option<BytesRecord<BgpUpdateMessage>>,
     pub(crate) provenance: Provenance,
@@ -774,7 +780,7 @@ impl RotoType for PrefixRoute {
 //-----------------------
 
 #[allow(dead_code)]
-impl FlowSpecRoute<bytes::Bytes> {
+impl FlowSpecRoute<Bytes> {
     pub(crate) fn get_field_num() -> usize {
         todo!()
     }
@@ -854,7 +860,7 @@ impl FlowSpecRoute<bytes::Bytes> {
     }
 }
 
-impl RotoType for FlowSpecRoute<bytes::Bytes> {
+impl RotoType for FlowSpecRoute<Bytes> {
     fn get_props_for_method(
         _ty: TypeDef,
         method_name: &crate::ast::Identifier,
@@ -1101,8 +1107,8 @@ impl From<BasicNlriToken> for u8 {
 
 //------------ FlowSpecRoute -------------------------------------------------
 
-impl From<RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>>> for TypeValue {
-    fn from(value: RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>>) -> Self {
+impl From<RouteWorkshop<Ipv4FlowSpecNlri<Bytes>>> for TypeValue {
+    fn from(value: RouteWorkshop<Ipv4FlowSpecNlri<Bytes>>) -> Self {
         TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(
             FlowSpecRoute {
                 attributes: value.attributes().clone(),
@@ -1112,7 +1118,7 @@ impl From<RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>>> for TypeValue {
     }
 }
 
-impl RotoType for RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>> {
+impl RotoType for RouteWorkshop<Ipv4FlowSpecNlri<Bytes>> {
     fn get_props_for_method(
         _ty: TypeDef,
         _method_name: &crate::ast::Identifier,
@@ -1182,10 +1188,48 @@ impl RotoType for RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>> {
 
 //------------ Provenance ----------------------------------------------------
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Timestamp(chrono::DateTime<Utc>);
+
+impl bincode::enc::Encode for Timestamp {
+    fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
+        todo!()
+    }
+}
+
+impl bincode::de::Decode for Timestamp {
+    fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
+        todo!()
+    }
+}
+
+impl From<DateTime<Utc>> for Timestamp {
+    fn from(value: DateTime<Utc>) -> Self {
+        Self(value)
+    }
+}
+
+impl Serialize for Timestamp {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer {
+        serializer.serialize_u64(0)
+    }
+}
+
+impl std::fmt::Display for Timestamp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl_borrow_decode!(Timestamp);
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, 
+    bincode::Encode, bincode::Decode)]
 pub struct Provenance {
     #[serde(skip)]
-    pub timestamp: chrono::DateTime<Utc>,
+    pub timestamp: Timestamp,
     // The SocketAddr of the monitored router over BMP, or the SocketAddr of
     // the BGP peer over BGP.
     pub connection_id: SocketAddr,
@@ -1379,9 +1423,11 @@ impl From<Provenance> for TypeValue {
     }
 }
 
+
 //------------ PeerRibType ---------------------------------------------------
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default, Serialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default, Serialize, 
+    bincode::Decode, bincode::Encode)]
 pub enum PeerRibType {
     InPre,
     InPost,
@@ -1433,7 +1479,8 @@ impl From<(bool, routecore::bmp::message::RibType)> for PeerRibType {
 
 //------------ PeerId --------------------------------------------------------
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, bincode::Decode,
+    bincode::Encode)]
 pub struct PeerId {
     pub addr: IpAddr,
     pub asn: Asn,

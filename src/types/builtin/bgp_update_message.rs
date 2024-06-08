@@ -1,3 +1,5 @@
+// use bytes::Bytes;
+use super::BytesWrapper as Bytes;
 use log::{error, trace};
 use paste::paste;
 
@@ -78,11 +80,11 @@ bytes_record_impl!(
 
 impl BytesRecord<BgpUpdateMessage> {
     pub fn new(
-        bytes: bytes::Bytes,
+        bytes: Bytes,
         session_config: SessionConfig,
     ) -> Result<Self, VmError> {
         BgpUpdateMessage::from_octets(
-            bytes,
+            bytes.into(),
             &session_config,
         )
         .map(|msg| msg.into())
@@ -119,12 +121,12 @@ impl From<Result<Option<AggregatorInfo>, routecore::bgp::ParseError>>
     }
 }
 
-impl From<Result<Option<AsPath<bytes::Bytes>>, routecore::bgp::ParseError>>
+impl From<Result<Option<AsPath<Bytes>>, routecore::bgp::ParseError>>
     for TypeValue
 {
     fn from(
         value: Result<
-            Option<AsPath<bytes::Bytes>>,
+            Option<AsPath<Bytes>>,
             routecore::bgp::ParseError,
         >,
     ) -> Self {

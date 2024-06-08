@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 
+use bincode::{Decode, Encode};
 use log::{debug, error, trace};
 use paste::paste;
 use serde::Serialize;
@@ -18,6 +19,7 @@ use crate::{
     noconversioninto, setmethodonly, typevaluefromimpls,
     wrappedfromimpls, scalartype,
 };
+use crate::types::builtin::BytesWrapper as Bytes;
 use crate::types::typedef::TypeDef::ConstEnumVariant;
 
 use super::super::typedef::TypeDef;
@@ -223,7 +225,8 @@ typevaluefromimpls!(bool);
 
 //------------ StringLiteral type -------------------------------------------
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Serialize)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Serialize,
+    Decode, Encode)]
 pub struct StringLiteral(pub(crate) String);
 impl StringLiteral {
     pub fn new(val: String) -> Self {
@@ -450,6 +453,7 @@ impl<T: Display> From<T> for StringLiteral {
 
 #[derive(
     Debug, Eq, Ord, PartialEq, PartialOrd, Copy, Clone, Hash, Serialize,
+    Decode, Encode
 )]
 pub struct IntegerLiteral(pub(crate) i64);
 impl IntegerLiteral {
@@ -660,7 +664,7 @@ impl From<IntegerLiteralToken> for usize {
 
 //------------ HexLiteral type ----------------------------------------------
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Serialize)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Serialize, Decode, Encode)]
 pub struct HexLiteral(pub(crate) u64);
 impl HexLiteral {
     pub fn new(val: u64) -> Self {
@@ -1023,7 +1027,7 @@ impl TryFrom<&TypeValue> for inetnum::addr::Prefix {
 
 createtoken!(PrefixLength; Set = 0);
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Serialize)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Serialize, Decode, Encode)]
 pub struct PrefixLength(pub(crate) u8);
 
 impl PrefixLength {
@@ -1263,7 +1267,7 @@ impl From<Vec<Community>> for TypeValue {
 
 //------------ Nlri ----------------------------------------------------------
 
-pub type Nlri = routecore::bgp::nlri::afisafi::Nlri<bytes::Bytes>;
+pub type Nlri = routecore::bgp::nlri::afisafi::Nlri<Bytes>;
 
 createtoken!(
     Nlri;
@@ -2059,6 +2063,8 @@ minimalscalartype!(AggregatorInfo);
     Ord,
     PartialOrd,
     Serialize,
+    bincode::Encode,
+    bincode::Decode
 )]
 pub enum NlriStatus {
     // Between start and EOR on a BGP peer-session
