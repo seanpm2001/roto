@@ -1193,13 +1193,23 @@ pub struct Timestamp(chrono::DateTime<Utc>);
 
 impl bincode::enc::Encode for Timestamp {
     fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
-        todo!()
+        bincode::Encode::encode(&self.0.timestamp(), encoder)?;
+        Ok(())
     }
 }
 
 impl bincode::de::Decode for Timestamp {
     fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
-        todo!()
+        let ts: i64 = bincode::Decode::decode(decoder)?;
+        Ok(
+            Self(
+                chrono::DateTime::<Utc>::from_timestamp(ts, 0)
+                    .ok_or_else(
+                        || Err::<chrono::DateTime::<Utc>,bincode::error::DecodeError>(
+                            bincode::error::DecodeError::LimitExceeded)
+                        ).unwrap()
+            )
+        )
     }
 }
 
