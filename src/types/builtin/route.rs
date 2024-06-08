@@ -1,9 +1,7 @@
 use std::collections::BTreeSet;
 
-use bincode::impl_borrow_decode;
 // use bytes::Bytes;
 use inetnum::addr::Prefix;
-use routecore::bgp::nlri::afisafi::AfiSafiNlri;
 use routecore::bgp::nlri::afisafi::AfiSafiType;
 use routecore::bgp::nlri::afisafi::IsPrefix;
 use routecore::bgp::nlri::afisafi::NlriType;
