@@ -14,3 +14,7 @@ pub use builtin_type_value::*;
 pub use global_methods::*;
 pub use primitives::*;
 pub use route::*;
+
+pub use routecore::bgp::message::UpdateMessage;
+pub use routecore::bgp::message::SessionConfig;
+pub use BytesWrapper as Bytes;
