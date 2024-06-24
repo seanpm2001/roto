@@ -1267,7 +1267,7 @@ impl From<Vec<Community>> for TypeValue {
 
 //------------ Nlri ----------------------------------------------------------
 
-pub type Nlri = routecore::bgp::nlri::afisafi::Nlri<Bytes>;
+pub type Nlri<Octs> = routecore::bgp::nlri::afisafi::Nlri<Octs>;
 
 createtoken!(
     Nlri;
@@ -1276,7 +1276,7 @@ createtoken!(
     Safi = 2
 );
 
-impl RotoType for Nlri {
+impl RotoType for Nlri<Bytes> {
 
     fn get_props_for_method(
         _ty: TypeDef,
@@ -1401,20 +1401,20 @@ impl RotoType for Nlri {
 
 // impl ScalarValue for Nlri {}
 
-impl From<Nlri> for TypeValue {
-    fn from(val: Nlri) -> Self {
+impl From<Nlri<Bytes>> for TypeValue {
+    fn from(val: Nlri<Bytes>) -> Self {
         TypeValue::Builtin(BuiltinTypeValue::Nlri(val))
     }
 }
 
-impl From<Nlri> for BuiltinTypeValue {
-    fn from(value: Nlri) -> Self {
+impl From<Nlri<Bytes>> for BuiltinTypeValue {
+    fn from(value: Nlri<Bytes>) -> Self {
         BuiltinTypeValue::Nlri(value)
     }
 }
 
-impl From<Vec<Nlri>> for TypeValue {
-    fn from(value: Vec<Nlri>) -> Self {
+impl From<Vec<Nlri<Bytes>>> for TypeValue {
+    fn from(value: Vec<Nlri<Bytes>>) -> Self {
         let list: Vec<ElementTypeValue> = value
             .iter()
             .map(|c| ElementTypeValue::Primitive(TypeValue::from(c.clone())))

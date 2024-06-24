@@ -206,11 +206,11 @@ impl
     }
 }
 
-impl From<Result<Vec<Nlri>, routecore::bgp::ParseError>>
+impl From<Result<Vec<Nlri<Bytes>>, routecore::bgp::ParseError>>
     for List
 {
     fn from(
-        value: Result<Vec<Nlri>, routecore::bgp::ParseError>,
+        value: Result<Vec<Nlri<Bytes>>, routecore::bgp::ParseError>,
     ) -> Self {
         List(
             value

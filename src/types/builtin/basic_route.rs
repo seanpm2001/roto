@@ -4,6 +4,11 @@ use std::net::IpAddr;
 use std::net::SocketAddr;
 
 use bincode::impl_borrow_decode;
+use routecore::bgp::nlri::afisafi::AfiSafiNlri;
+use routecore::bgp::nlri::flowspec::FlowSpecNlri;
+use routecore::bgp::types::Afi;
+use routecore::Octets;
+use routecore::Parser;
 // use bytes::Bytes;
 use super::BytesWrapper as Bytes;
 use chrono::DateTime;
@@ -12,6 +17,7 @@ use routecore::bgp::communities::Community;
 use routecore::bgp::communities::HumanReadableCommunity;
 use routecore::bgp::message::update_builder::ComposeError;
 use routecore::bgp::nlri::afisafi::Ipv4FlowSpecNlri;
+use routecore::bgp::nlri::afisafi::Ipv6FlowSpecNlri;
 use routecore::bgp::nlri::afisafi::Ipv4UnicastNlri;
 use routecore::bgp::nlri::afisafi::Ipv4UnicastAddpathNlri;
 use routecore::bgp::nlri::afisafi::Ipv6UnicastNlri;
@@ -23,6 +29,7 @@ use routecore::bgp::nlri::afisafi::Ipv6MulticastAddpathNlri;
 use routecore::bgp::workshop::route::WorkshopAttribute;
 use serde::Serializer;
 use crate::types::builtin::FlowSpecNlri::Ipv4FlowSpec;
+use crate::types::builtin::FlowSpecNlri::Ipv6FlowSpec;
 use routecore::bgp::nlri::afisafi::IsPrefix;
 use routecore::bgp::path_attributes::PaMap;
 use routecore::bgp::path_attributes::PathAttribute;
@@ -1107,18 +1114,22 @@ impl From<BasicNlriToken> for u8 {
 
 //------------ FlowSpecRoute -------------------------------------------------
 
-impl From<RouteWorkshop<Ipv4FlowSpecNlri<Bytes>>> for TypeValue {
-    fn from(value: RouteWorkshop<Ipv4FlowSpecNlri<Bytes>>) -> Self {
+impl<Octs: Octets> From<RouteWorkshop<Ipv4FlowSpecNlri<Octs>>> for TypeValue {
+    fn from(value: RouteWorkshop<Ipv4FlowSpecNlri<Octs>>) -> Self {
+        let fs_nlri = value.nlri().nlri();
+        let raw: Bytes = Bytes::copy_from_slice(fs_nlri.raw().as_ref());
+        let fs = FlowSpecNlri::<Bytes>::parse(&mut Parser::from_ref(&raw), Afi::Ipv4).unwrap();
+        let nlri = Ipv4FlowSpec::<Bytes>(Ipv4FlowSpecNlri::<Bytes>(fs));
         TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(
             FlowSpecRoute {
                 attributes: value.attributes().clone(),
-                nlri: Ipv4FlowSpec(value.nlri().clone()),
-            },
+                nlri
+            }
         ))
     }
 }
 
-impl RotoType for RouteWorkshop<Ipv4FlowSpecNlri<Bytes>> {
+impl<Octs: Octets> RotoType for RouteWorkshop<Ipv4FlowSpecNlri<Octs>> {
     fn get_props_for_method(
         _ty: TypeDef,
         _method_name: &crate::ast::Identifier,
@@ -1166,25 +1177,67 @@ impl RotoType for RouteWorkshop<Ipv4FlowSpecNlri<Bytes>> {
     }
 }
 
-// impl From<RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>>>
-//     for TypeValue
-// {
-//     fn from(
-//         value: RouteWorkshop<Ipv4FlowSpecNlri<bytes::Bytes>>,
-//     ) -> Self {
-//         TypeValue::Builtin(BuiltinTypeValue::Nlri(Ipv4FlowSpec(value.nlri().clone())))
-//     }
-// }
+impl<Octs: Octets> From<RouteWorkshop<Ipv6FlowSpecNlri<Octs>>> for TypeValue {
+    fn from(value: RouteWorkshop<Ipv6FlowSpecNlri<Octs>>) -> Self {
+        let raw: Bytes = Bytes::copy_from_slice(value.nlri().nlri().raw().as_ref());
+        let fs = FlowSpecNlri::<Bytes>::parse(&mut Parser::from_ref(&raw), Afi::Ipv4).unwrap();
+        let nlri = Ipv6FlowSpec::<Bytes>(Ipv6FlowSpecNlri::<Bytes>(fs));
+        TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(
+            FlowSpecRoute {
+                attributes: value.attributes().clone(),
+                nlri
+            }
+        ))
+    }
+}
 
-// impl From<RouteWorkshop<Ipv6FlowSpecNlri<bytes::Bytes>>>
-//     for TypeValue
-// {
-//     fn from(
-//         value: RouteWorkshop<Ipv6FlowSpecNlri<bytes::Bytes>>,
-//     ) -> Self {
-//         TypeValue::Builtin(BuiltinTypeValue::Nlri(Ipv6FlowSpec(value.nlri().clone())))
-//     }
-// }
+impl<Octs: Octets> RotoType for RouteWorkshop<Ipv6FlowSpecNlri<Octs>> {
+    fn get_props_for_method(
+        _ty: TypeDef,
+        _method_name: &crate::ast::Identifier,
+    ) -> Result<MethodProps, CompileError>
+    where
+        Self: std::marker::Sized,
+    {
+        todo!()
+    }
+
+    fn into_type(
+        self,
+        _type_value: &TypeDef,
+    ) -> Result<TypeValue, CompileError>
+    where
+        Self: std::marker::Sized,
+    {
+        todo!()
+    }
+
+    fn exec_value_method<'a>(
+        &'a self,
+        _method_token: usize,
+        _args: &'a [StackValue],
+        _res_type: TypeDef,
+    ) -> Result<TypeValue, VmError> {
+        todo!()
+    }
+
+    fn exec_consume_value_method(
+        self,
+        _method_token: usize,
+        _args: Vec<TypeValue>,
+        _res_type: TypeDef,
+    ) -> Result<TypeValue, VmError> {
+        todo!()
+    }
+
+    fn exec_type_method(
+        _method_token: usize,
+        _args: &[StackValue],
+        _res_type: TypeDef,
+    ) -> Result<TypeValue, VmError> {
+        todo!()
+    }
+}
 
 //------------ Provenance ----------------------------------------------------
 

@@ -214,7 +214,7 @@ impl EnumBytesRecord for BytesRecord<BmpMessage> {
 
     fn is_variant(&self, variant_token: Token) -> bool {
         if let Token::Variant(variant_index) = variant_token {
-            variant_index == self.get_variant().into()
+            variant_index == usize::from(self.get_variant())
         } else {
             false
         }

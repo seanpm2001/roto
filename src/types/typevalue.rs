@@ -10,9 +10,8 @@ use inetnum::asn::Asn;
 use routecore::bgp::aspath::{HopPath, OwnedHop as Hop};
 use routecore::bgp::communities::HumanReadableCommunity as Community;
 use routecore::bgp::nlri::afisafi::{
-    Ipv4MulticastAddpathNlri, Ipv4MulticastNlri, Ipv4UnicastAddpathNlri, 
-    Ipv4UnicastNlri, Ipv6FlowSpecNlri, Ipv6MulticastAddpathNlri, 
-    Ipv6MulticastNlri, Ipv6UnicastAddpathNlri, Ipv6UnicastNlri
+    Ipv4MulticastAddpathNlri, Ipv4MulticastNlri, Ipv4UnicastAddpathNlri, Ipv4UnicastNlri,
+    Ipv6MulticastAddpathNlri, Ipv6MulticastNlri, Ipv6UnicastAddpathNlri, Ipv6UnicastNlri
 };
 use routecore::bgp::types::PathId;
 use routecore::bgp::types::{
@@ -35,7 +34,7 @@ use crate::{
 };
 
 use super::builtin::basic_route::{PeerId, PeerRibType, Provenance};
-use super::builtin::{BytesWrapper as Bytes, FlowSpecNlri, FlowSpecRoute, PrefixRoute, PrefixRouteWs, RouteContext};
+use super::builtin::{BytesWrapper as Bytes, FlowSpecRoute, PrefixRoute, PrefixRouteWs, RouteContext};
 use super::lazyrecord_types::BgpUpdateMessage;
 use super::{
     builtin::{
@@ -1538,14 +1537,5 @@ impl From<RouteWorkshop<Ipv6MulticastAddpathNlri>> for TypeValue {
                 value
             )
         )))
-    }
-}
-
-impl From<RouteWorkshop<Ipv6FlowSpecNlri<Bytes>>> for TypeValue {
-    fn from(value: RouteWorkshop<Ipv6FlowSpecNlri<Bytes>>) -> Self {
-        TypeValue::Builtin(BuiltinTypeValue::FlowSpecRoute(FlowSpecRoute {
-            nlri: FlowSpecNlri::Ipv6FlowSpec(value.nlri().clone()),
-            attributes: value.attributes().clone(),
-        }))
     }
 }

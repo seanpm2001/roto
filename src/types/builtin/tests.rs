@@ -115,7 +115,7 @@ mod route {
         let bgp_msg = update.into_inner();
 
         roto_msgs
-            .push(RouteWorkshop::from_update_pdu(nlri, &bgp_msg).unwrap());
+            .push(RouteWorkshop::from_update_pdu::<Bytes>(nlri, &bgp_msg).unwrap());
 
         for prefix in &prefixes[1..] {
             let nlri = Ipv6UnicastNlri::try_from(*prefix).unwrap();
@@ -241,7 +241,7 @@ mod route {
         let afi_safis = update.bytes_parser().afi_safis();
 
         #[allow(clippy::mutable_key_type)]
-        let mut nlri_set = BTreeSet::<Nlri>::new();
+        let mut nlri_set = BTreeSet::<Nlri<Bytes>>::new();
         
         trace!("afi_safis {:?}", afi_safis);
         let exploded = explode_announcements(update.bytes_parser(), &mut nlri_set);
@@ -268,7 +268,7 @@ mod route {
         let mut roto_msgs = vec![];
 
         roto_msgs.push(
-            RouteWorkshop::from_update_pdu(
+            RouteWorkshop::from_update_pdu::<Bytes>(
                 Ipv6UnicastNlri::try_from(prefixes[0]).unwrap(),
                 &bgp_msg,
             )
@@ -277,7 +277,7 @@ mod route {
 
         for prefix in &prefixes[1..] {
             roto_msgs.push(
-                RouteWorkshop::from_update_pdu(
+                RouteWorkshop::from_update_pdu::<Bytes>(
                     Ipv6UnicastNlri::try_from(*prefix).unwrap(),
                     &bgp_msg,
                 )

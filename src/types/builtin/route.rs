@@ -1,11 +1,10 @@
 use std::collections::BTreeSet;
-
-// use bytes::Bytes;
 use inetnum::addr::Prefix;
 use routecore::bgp::nlri::afisafi::AfiSafiType;
 use routecore::bgp::nlri::afisafi::IsPrefix;
 use routecore::bgp::nlri::afisafi::NlriType;
 use routecore::bgp::types::PathId;
+use routecore::Octets;
 use routecore::{
     bgp::{
         message::UpdateMessage,
@@ -24,8 +23,6 @@ use routecore::{
 use serde::Serialize;
 
 use crate::types::typevalue::TypeValue;
-
-use super::BytesWrapper as Bytes;
 use super::Nlri;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, bincode::Decode, 
@@ -252,10 +249,12 @@ macro_rules! announcements_into_typevalues {
 /// contain one TypeValue-wrapped RWS for every announcement in the PDU, no
 /// matter what the type of the `NLRI` of the announcement is.
 #[allow(clippy::mutable_key_type)]
-pub fn explode_announcements(
-    update: &UpdateMessage<Bytes>,
-    nlri_set: &mut BTreeSet<Nlri>,
-) -> Result<Vec<TypeValue>, ParseError> {
+pub fn explode_announcements<'a, Octs: Octets<Range<'a> = Octs> + 'a>(
+    update: &'a UpdateMessage<Octs>,
+    nlri_set: &mut BTreeSet<Nlri<Octs>>
+) -> Result<Vec<TypeValue>, ParseError> where
+        Vec<u8>: From<<Octs as Octets>::Range<'a>>,
+        <Octs as Octets>::Range<'a>: Clone {
     // Read all the types of NLRI in MP_REACH and/or conventional NLRI.
     let announce_afi_safis = update.announcement_fams();
 
@@ -329,7 +328,7 @@ pub fn explode_announcements(
             NlriType::Ipv4RouteTargetAddpath => todo!(),
             NlriType::Ipv4FlowSpec => {
                 announcements_into_typevalues!(
-                    Ipv4FlowSpecNlri<Bytes>,
+                    Ipv4FlowSpecNlri<<Octs as Octets>::Range<'a>>,
                     update,
                     tv_vec,
                     nlri_set
@@ -338,7 +337,7 @@ pub fn explode_announcements(
             NlriType::Ipv4FlowSpecAddpath => todo!(),
             NlriType::Ipv6FlowSpec => {
                 announcements_into_typevalues!(
-                    Ipv6FlowSpecNlri<Bytes>,
+                    Ipv6FlowSpecNlri<<Octs as Octets>::Range<'a>>,
                     update,
                     tv_vec,
                     nlri_set
@@ -386,10 +385,12 @@ macro_rules! withdrawals_into_typevalues {
 /// contain one TypeValue-wrapped RWS for every announcement in the PDU, no
 /// matter what the type of the `NLRI` of the announcement is.
 #[allow(clippy::mutable_key_type)]
-pub fn explode_withdrawals(
-    update: &UpdateMessage<Bytes>,
-    nlri_set: &mut BTreeSet<Nlri>
-) -> Result<Vec<TypeValue>, ParseError> {
+pub fn explode_withdrawals<'a, Octs: Octets<Range<'a> = Octs> + 'a>(
+    update: &'a UpdateMessage<Octs>,
+    nlri_set: &mut BTreeSet<Nlri<Octs>>
+) -> Result<Vec<TypeValue>, ParseError> where
+        Vec<u8>: From<<Octs as Octets>::Range<'a>>,
+        <Octs as Octets>::Range<'a>: Clone {
     // Read all the types of NLRI in MP_REACH and/or conventional NLRI.
     let announce_afi_safis = update.withdrawal_fams();
 
@@ -457,7 +458,7 @@ pub fn explode_withdrawals(
             NlriType::Ipv4RouteTargetAddpath => todo!(),
             NlriType::Ipv4FlowSpec => {
                 withdrawals_into_typevalues!(
-                    Ipv4FlowSpecNlri<Bytes>,
+                    Ipv4FlowSpecNlri<Octs>,
                     update,
                     res,
                     nlri_set
@@ -466,7 +467,7 @@ pub fn explode_withdrawals(
             NlriType::Ipv4FlowSpecAddpath => todo!(),
             NlriType::Ipv6FlowSpec => {
                 withdrawals_into_typevalues!(
-                    Ipv6FlowSpecNlri<Bytes>,
+                    Ipv6FlowSpecNlri<Octs>,
                     update,
                     res,
                     nlri_set
@@ -485,78 +486,79 @@ pub fn explode_withdrawals(
 
 #[rustfmt::skip]
 #[test]
-    fn pdu_into_rws_typed() {
+fn pdu_into_rws_typed() {
+    use super::BytesWrapper as Bytes;
 
-        use crate::types::typevalue::TypeValue;
-        use crate::types::builtin::BuiltinTypeValue;
-        use routecore::bgp::message::SessionConfig;
-        use crate::types::builtin::route::NlriType::{Ipv4Unicast, Ipv6Unicast};
+    use crate::types::typevalue::TypeValue;
+    use crate::types::builtin::BuiltinTypeValue;
+    use routecore::bgp::message::SessionConfig;
+    use crate::types::builtin::route::NlriType::{Ipv4Unicast, Ipv6Unicast};
 
-        // UPDATE with 5 ipv6 nlri + 2 conventional
-        let raw = bytes::Bytes::from(vec![
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0x00, 0x95,
-            0x02, 0x00, 0x00, 0x00, 0x78,
-            0x80,
-            0x0e, 0x5a, 0x00, 0x02, 0x01, 0x20, 0xfc, 0x00,
-            0x00, 0x10, 0x00, 0x01, 0x00, 0x10, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0xfe, 0x80,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80,
-            0xfc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
-            0x40, 0x20, 0x01, 0x0d, 0xb8, 0xff, 0xff, 0x00,
-            0x00, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0xff, 0xff,
-            0x00, 0x01, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0xff,
-            0xff, 0x00, 0x02, 0x40, 0x20, 0x01, 0x0d, 0xb8,
-            0xff, 0xff, 0x00, 0x03, 0x40, 0x01, 0x01, 0x00,
-            0x40, 0x02, 0x06, 0x02, 0x01, 0x00, 0x00, 0x00,
-            0xc8,
-            0x40, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, // NEXT_HOP
-            0x80, 0x04, 0x04, 0x00, 0x00, 0x00, 0x00,
-            16, 1, 2,
-            16, 10, 20
-        ]).into();
-        let pdu = UpdateMessage::from_octets(raw, &SessionConfig::modern())
-            .unwrap();
+    // UPDATE with 5 ipv6 nlri + 2 conventional
+    let raw = bytes::Bytes::from(vec![
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0x00, 0x95,
+        0x02, 0x00, 0x00, 0x00, 0x78,
+        0x80,
+        0x0e, 0x5a, 0x00, 0x02, 0x01, 0x20, 0xfc, 0x00,
+        0x00, 0x10, 0x00, 0x01, 0x00, 0x10, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0xfe, 0x80,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80,
+        0xfc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+        0x40, 0x20, 0x01, 0x0d, 0xb8, 0xff, 0xff, 0x00,
+        0x00, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0xff, 0xff,
+        0x00, 0x01, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0xff,
+        0xff, 0x00, 0x02, 0x40, 0x20, 0x01, 0x0d, 0xb8,
+        0xff, 0xff, 0x00, 0x03, 0x40, 0x01, 0x01, 0x00,
+        0x40, 0x02, 0x06, 0x02, 0x01, 0x00, 0x00, 0x00,
+        0xc8,
+        0x40, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, // NEXT_HOP
+        0x80, 0x04, 0x04, 0x00, 0x00, 0x00, 0x00,
+        16, 1, 2,
+        16, 10, 20
+    ]).into();
+    let pdu = UpdateMessage::from_octets(raw, &SessionConfig::modern())
+        .unwrap();
 
-        let announces = pdu.announcement_fams().collect::<Vec<_>>();
+    let announces = pdu.announcement_fams().collect::<Vec<_>>();
 
-        #[allow(clippy::mutable_key_type)]
-        let mut nlri_set = BTreeSet::new();
+    #[allow(clippy::mutable_key_type)]
+    let mut nlri_set = BTreeSet::new();
 
-        assert_eq!(announces, [Ipv4Unicast, Ipv6Unicast]);
+    assert_eq!(announces, [Ipv4Unicast, Ipv6Unicast]);
 
-        let res = explode_announcements(&pdu, &mut nlri_set).unwrap();
+    let res = explode_announcements::<Bytes>(&pdu, &mut nlri_set).unwrap();
 
-        // let res = pdu_into_typed_rws::<_, RouteWorkshop<BasicNlri>, _, Ipv6UnicastNlri>(&pdu);
-        let mut ipv4_nlri = 0;
-        let mut ipv6_nlri = 0;
-        for rws in &res {
-            println!("{}", rws);
+    // let res = pdu_into_typed_rws::<_, RouteWorkshop<BasicNlri>, _, Ipv6UnicastNlri>(&pdu);
+    let mut ipv4_nlri = 0;
+    let mut ipv6_nlri = 0;
+    for rws in &res {
+        println!("{}", rws);
 
-            if let TypeValue::Builtin(BuiltinTypeValue::PrefixRoute(route)) = rws {
-                match route.nlri().get_type() {
-                    AfiSafiType::Ipv4Unicast => { ipv4_nlri += 1; },
-                    AfiSafiType::Ipv6Unicast => { ipv6_nlri += 1; },
-                    _ => {}
-                }
+        if let TypeValue::Builtin(BuiltinTypeValue::PrefixRoute(route)) = rws {
+            match route.nlri().get_type() {
+                AfiSafiType::Ipv4Unicast => { ipv4_nlri += 1; },
+                AfiSafiType::Ipv6Unicast => { ipv6_nlri += 1; },
+                _ => {}
             }
         }
-        assert_eq!(ipv4_nlri, 2);
-        assert_eq!(ipv6_nlri, 5);
-        assert_eq!(res.len(), 7);
-
-        // let res = pdu_into_typed_rws::<_, RouteWorkshop<BasicNlri>, _, Ipv4UnicastNlri>(&pdu);
-        // for rws in &res {
-        //     println!("{}", rws.nlri());
-        // }
-        // assert_eq!(res.len(), 2);
-
-        // let res = pdu_into_typed_rws::<_, RouteWorkshop<_>, _, Ipv4FlowSpecNlri<_>>(&pdu);
-        // for rws in &res {
-        //     println!("{}", rws.nlri());
-        // }
-        // assert_eq!(res.len(), 0);
     }
+    assert_eq!(ipv4_nlri, 2);
+    assert_eq!(ipv6_nlri, 5);
+    assert_eq!(res.len(), 7);
+
+// let res = pdu_into_typed_rws::<_, RouteWorkshop<BasicNlri>, _, Ipv4UnicastNlri>(&pdu);
+// for rws in &res {
+//     println!("{}", rws.nlri());
+// }
+// assert_eq!(res.len(), 2);
+
+// let res = pdu_into_typed_rws::<_, RouteWorkshop<_>, _, Ipv4FlowSpecNlri<_>>(&pdu);
+// for rws in &res {
+//     println!("{}", rws.nlri());
+// }
+// assert_eq!(res.len(), 0);
+}
