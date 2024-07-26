@@ -25,10 +25,10 @@ serde           = { version = "1.0", features = [ "derive", "rc" ] }
 # inetnum         = { version = "0.1.0", features = ["arbitrary", "serde"] }
 # inetnum         = { path = "../../inetnum", features = ["arbitrary", "serde", "bincode"] }
 inetnum         =  { git = "https://github.com/nlnetlabs/inetnum", features = ["arbitrary", "serde", "bincode"], branch = "bincode" }
-# rotonda-store   = { git = "https://github.com/nlnetlabs/rotonda-store", branch = "indexed-multi-map" }
-# rotonda-store   = { path = "../rotonda-store" }
 rotonda-store   = { git = "https://github.com/nlnetlabs/rotonda-store", branch = "bincode" }
-routecore       = { git = "https://github.com/nlnetlabs/routecore", branch = "bincode", features = ["bincode", "bgp", "bmp", "serde"] }
+# rotonda-store   = { path = "../rotonda-store" }
+# rotonda-store   = { git = "https://github.com/nlnetlabs/rotonda-store", branch = "bincode" }
+routecore       = { git = "https://github.com/nlnetlabs/routecore", branch = "rc1-additions", features = ["bincode", "bgp", "bmp", "serde"] }
 # routecore       = { path = "../../routecore", features = ["bgp", "bmp", "serde", "bincode"] }
 clap            = { version = "4.4.6", features = ["derive"] }
 ariadne         = "0.4.0"
